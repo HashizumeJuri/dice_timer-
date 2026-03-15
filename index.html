@@ -3,165 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Dice Timer Cloud</title>
+    <title>Sync Dice Timer Pro</title>
     <style>
         :root { --primary: #8b5cf6; --accent: #10b981; --bg: #0f172a; --card-bg: #1e293b; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            background: var(--bg); color: #f8fafc; margin: 0; padding: 20px;
-            display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; -webkit-tap-highlight-color: transparent;
-        }
-        .card { 
-            background: var(--card-bg); padding: 25px; border-radius: 24px; 
-            width: 100%; max-width: 360px; border: 1px solid #334155; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5); text-align: center;
-        }
-        textarea { 
-            width: 100%; background: #0f172a; border: 1px solid #475569; 
-            color: white; border-radius: 12px; padding: 12px; font-size: 16px; 
-            box-sizing: border-box; margin-bottom: 15px; resize: none;
-        }
-        #timer-display { font-size: 5.5rem; font-weight: 800; margin: 10px 0; font-variant-numeric: tabular-nums; line-height: 1; }
-        #task-display { font-size: 1.4rem; font-weight: bold; color: var(--accent); min-height: 1.8rem; margin-bottom: 5px; }
-        button { 
-            width: 100%; padding: 20px; border-radius: 18px; border: none; 
-            font-weight: bold; font-size: 1.2rem; cursor: pointer; 
-            transition: transform 0.1s; touch-action: manipulation;
-        }
-        .roll-btn { background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; box-shadow: 0 8px 20px rgba(99,102,241,0.3); }
-        .roll-btn:active { transform: scale(0.96); }
-        .reset-btn { background: #334155; color: #cbd5e1; margin-top: 15px; font-size: 0.9rem; padding: 10px; }
-        
-        .log-section { width: 100%; max-width: 360px; margin-top: 30px; }
-        .log-item { background: #1e293b; padding: 12px; border-radius: 12px; margin-bottom: 10px; border-left: 4px solid var(--primary); font-size: 0.85rem; }
-        
-        .rolling { animation: shake 0.1s infinite; color: #94a3b8; }
-        @keyframes shake { 0%{transform:rotate(0.5deg)} 50%{transform:rotate(-0.5deg)} }
+        body { font-family: sans-serif; background: var(--bg); color: #f8fafc; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 24px; width: 100%; max-width: 360px; border: 1px solid #334155; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        textarea { width: 100%; background: #0f172a; border: 1px solid #475569; color: white; border-radius: 12px; padding: 10px; font-size: 16px; box-sizing: border-box; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; font-size: 0.9rem; color: #94a3b8; }
+        input[type="range"] { width: 60%; }
+        #timer-display { font-size: 5rem; font-weight: 800; margin: 10px 0; }
+        #task-display { color: var(--accent); font-weight: bold; font-size: 1.2rem; min-height: 1.5rem; }
+        button { width: 100%; padding: 18px; border-radius: 16px; border: none; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+        .roll-btn { background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; }
+        .reset-btn { background: #475569; color: white; margin-top: 10px; display: none; }
+        .log-item { background: #1e293b; padding: 10px; border-radius: 12px; margin-top: 10px; border-left: 4px solid var(--primary); font-size: 0.8rem; text-align: left; width: 100%; max-width: 360px; box-sizing: border-box; }
+        .rolling { animation: shake 0.1s infinite; }
+        @keyframes shake { 0%{transform:rotate(1deg)} 50%{transform:rotate(-1deg)} }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <textarea id="taskPool" rows="2" placeholder="タスクを改行で入力">筋トレ&#13;読書&#13;プログラミング</textarea>
+    <textarea id="taskPool" rows="2">筋トレ&#13;読書&#13;勉強</textarea>
     
+    <div class="setting-row">
+        <span>個数: <b id="nVal">1</b></span>
+        <input type="range" id="diceN" min="1" max="10" value="1" oninput="document.getElementById('nVal').innerText=this.value">
+    </div>
+    <div class="setting-row">
+        <span>面数: <b id="sVal">30</b></span>
+        <input type="range" id="diceS" min="2" max="100" value="30" oninput="document.getElementById('sVal').innerText=this.value">
+    </div>
+
     <div id="task-display">Ready?</div>
     <div id="timer-display">00:00</div>
     
-    <button id="rollBtn" class="roll-btn" onclick="bootAudioAndRoll()">運命のダイスを振る</button>
-    <button id="resetBtn" class="reset-btn" onclick="resetTimer()" style="display:none;">タイマーを停止・戻す</button>
+    <button id="rollBtn" class="roll-btn" onclick="start()">ダイスを振る</button>
+    <button id="resetBtn" class="reset-btn" onclick="location.reload()">リセット</button>
 </div>
 
-<div class="log-section">
-    <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 10px; letter-spacing: 0.1em;">HISTORY (LOCAL)</div>
-    <div id="logList"></div>
-</div>
+<div id="logList" style="margin-top:20px; width:100%; max-width:360px;"></div>
 
 <script>
-    let timeLeft, timerId, audioCtx, currentTask, currentMins;
+    // --- ここにGASのURLを貼り付けてください ---
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwlFsHRyEdO8HJqebJaHrzNLkmmZ9kAgPgYv5mg0C8DL2x9R24TVSNvsKi7OOvXa0yn/exec";
 
-    // iOS対策：ユーザーのクリックでAudioを起動
-    function bootAudioAndRoll() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+    let timeLeft, timerId, audioCtx;
+
+    function start() {
+        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         roll();
-    }
-
-    function playSound(freq, duration) {
-        if(!audioCtx) return;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-        osc.start(); osc.stop(audioCtx.currentTime + duration);
     }
 
     function roll() {
         const tasks = document.getElementById('taskPool').value.split('\n').filter(t => t.trim());
-        if (!tasks.length) return alert("タスクを入力してください");
-
-        const btn = document.getElementById('rollBtn');
-        btn.disabled = true;
+        if(!tasks.length) return alert("タスクを入力してください");
+        
+        document.getElementById('rollBtn').disabled = true;
         document.getElementById('timer-display').classList.add('rolling');
 
         let count = 0;
-        const interval = setInterval(() => {
-            playSound(150 + (count * 10), 0.05);
-            document.getElementById('task-display').innerText = tasks[Math.floor(Math.random() * tasks.length)];
-            document.getElementById('timer-display').innerText = Math.floor(Math.random() * 60) + ":00";
-            if (++count > 15) {
-                clearInterval(interval);
+        const effect = setInterval(() => {
+            document.getElementById('task-display').innerText = tasks[Math.floor(Math.random()*tasks.length)];
+            document.getElementById('timer-display').innerText = Math.floor(Math.random()*60) + ":00";
+            if(++count > 15) {
+                clearInterval(effect);
+                document.getElementById('timer-display').classList.remove('rolling');
                 finalize(tasks);
             }
         }, 80);
     }
 
     function finalize(tasks) {
-        currentTask = tasks[Math.floor(Math.random() * tasks.length)];
-        currentMins = Math.floor(Math.random() * 30) + 1; // 1〜30分
+        const n = parseInt(document.getElementById('diceN').value);
+        const s = parseInt(document.getElementById('diceS').value);
+        const task = tasks[Math.floor(Math.random()*tasks.length)];
         
-        document.getElementById('timer-display').classList.remove('rolling');
-        document.getElementById('task-display').innerText = "🎯 " + currentTask;
-        
-        timeLeft = currentMins * 60;
+        let mins = 0;
+        for(let i=0; i<n; i++) mins += Math.floor(Math.random()*s)+1;
+
+        document.getElementById('task-display').innerText = "🎯 " + task + " (" + n + "d" + s + ")";
+        timeLeft = mins * 60;
         document.getElementById('rollBtn').style.display = 'none';
         document.getElementById('resetBtn').style.display = 'block';
         
-        startTimer();
-    }
-
-    function startTimer() {
-        updateDisplay();
         timerId = setInterval(() => {
             timeLeft--;
-            updateDisplay();
-            if (timeLeft <= 0) {
+            const m = Math.floor(timeLeft/60), s_rem = timeLeft%60;
+            document.getElementById('timer-display').innerText = String(m).padStart(2,'0')+":"+String(s_rem).padStart(2,'0');
+            if(timeLeft <= 0) {
                 clearInterval(timerId);
-                playSound(880, 0.5); // 終了音
-                saveLog(currentTask, currentMins);
-                alert("時間終了！: " + currentTask);
-                resetTimer();
+                saveLog(task, mins);
+                alert("終了！");
             }
         }, 1000);
     }
 
-    function updateDisplay() {
-        const m = Math.floor(timeLeft / 60);
-        const s = timeLeft % 60;
-        document.getElementById('timer-display').innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    async function saveLog(task, mins) {
+        // GASに送信（同期）
+        await fetch(GAS_URL, {
+            method: "POST",
+            body: JSON.stringify({task, mins})
+        });
+        loadLogs();
     }
 
-    function saveLog(task, mins) {
-        const logs = JSON.parse(localStorage.getItem('diceLogs') || '[]');
-        logs.unshift({task, mins, date: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})});
-        localStorage.setItem('diceLogs', JSON.stringify(logs.slice(0, 5)));
-        renderLogs();
-    }
-
-    function renderLogs() {
-        const logs = JSON.parse(localStorage.getItem('diceLogs') || '[]');
+    async function loadLogs() {
+        // GASから取得（同期）
+        const res = await fetch(GAS_URL);
+        const logs = await res.json();
         document.getElementById('logList').innerHTML = logs.map(l => `
-            <div class="log-item">
-                <b>${l.task}</b> <small style="opacity:0.6; float:right;">${l.date}</small><br>
-                <span style="color:var(--primary); font-size:0.75rem;">Done: ${l.mins} min</span>
-            </div>
+            <div class="log-item"><b>${l.task}</b> (${l.mins})<br><small>${l.date}</small></div>
         `).join('');
     }
 
-    function resetTimer() {
-        clearInterval(timerId);
-        document.getElementById('rollBtn').style.display = 'block';
-        document.getElementById('rollBtn').disabled = false;
-        document.getElementById('resetBtn').style.display = 'none';
-        document.getElementById('task-display').innerText = "Ready?";
-        document.getElementById('timer-display').innerText = "00:00";
-    }
-
-    window.onload = renderLogs;
+    window.onload = loadLogs;
 </script>
 </body>
 </html>
